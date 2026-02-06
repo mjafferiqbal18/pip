@@ -33,6 +33,7 @@ from packaging.utils import canonicalize_name
 
 from pipstyle import load_context, ResolutionRunner
 from pipstyle.loader import ResolutionContext
+from pipstyle.resolvelib.resolvers.exceptions import ResolverException
 
 
 def parse_args() -> argparse.Namespace:
@@ -56,6 +57,7 @@ def parse_args() -> argparse.Namespace:
 
     ap.add_argument("--output-dir", default="output", help="Output directory for CSV and optional tree subdir")
     ap.add_argument("--chunk-cache-cap", type=int, default=200_000, help="LRU cap for chunk cache")
+    ap.add_argument("--header-cache-cap", type=int, default=500_000, help="LRU cap for header cache")
     ap.add_argument("--debug", action="store_true", help="Store resolved dependency trees per node")
 
     return ap.parse_args()
@@ -148,6 +150,7 @@ def run() -> None:
         mongo_uri=args.mongo_uri,
         pypi_db=args.pypi_db,
         chunk_cache_cap=args.chunk_cache_cap,
+        header_cache_cap=args.header_cache_cap,
     )
     name_to_id = {v: k for k, v in ctx.name_id_to_name.items()}
     root_name_id = name_to_id.get(root_pkg_canon)
@@ -195,13 +198,21 @@ def run() -> None:
                 continue
 
             t_cutoff = max(int(nt), root_time)
-            resolved, depth, tree = runner.resolve(
-                node_id=node_id,
-                root_node_id=root_id,
-                root_name_id=root_name_id,
-                time=t_cutoff,
-                debug=args.debug,
-            )
+            try:
+                resolved, depth, tree = runner.resolve(
+                    node_id=node_id,
+                    root_node_id=root_id,
+                    root_name_id=root_name_id,
+                    time=t_cutoff,
+                    debug=args.debug,
+                )
+            except ResolverException:
+                # Handle resolver exceptions (InconsistentCandidate, ResolutionImpossible, etc.)
+                # These occur when there are self-dependencies, circular dependencies, or other inconsistencies
+                # Treat as not resolved
+                resolved = False
+                depth = -1
+                tree = None
 
             writer.writerow([node_id, resolved, depth if depth >= 0 else ""])
 

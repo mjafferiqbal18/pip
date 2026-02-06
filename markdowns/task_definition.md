@@ -15,7 +15,7 @@
 - external/phase4_exposure_nodes_1.py (you should only look to this to understand how data is read from the collections and how it is stored in memory (or just streamed in from db in case of chunks))
 
 ### Task Definition:
-- Instead of querying PyPI endpoints for finding the latest version of a root package, finding its constraints, its direct dependencies (packages) and qualifying versions (package,versions) that satisfy constraints(and repeating the same tasks when recursing on the dependencies to resolve them in hopes of finding a satisfying assignment for all packages and a Python version that can support them), we want to use our preprocessed collections in our mongodb (described in detail in `markdowns/db_collections_reference.md`), all of which (apart from *_chunks) can be loaded into memory at the start.
+- Instead of querying PyPI endpoints for finding the latest version of a root package, finding its constraints, its direct dependencies (packages) and qualifying versions (package,versions) that satisfy constraints(and repeating the same tasks when recursing on the dependencies to resolve them in hopes of finding a satisfying assignment for all packages and a Python version that can support them), we want to use our preprocessed collections in our mongodb (described in detail in `markdowns/db_collections_reference.md`), all of which (apart from *_chunks) can be loaded into memory at the start. In addition, we want a few adjustments to the workflow, which are described in this document.
 
 ### Inputs to be provided (high level):
 - `node_id` (the package,version for which we want to perform dependency resolution)
@@ -32,7 +32,8 @@
 - `dependency Tree`: Final dependency tree structure if `resolved`==True and args.debug==1, Default= None.
 
 ### Required Workflow:
-- Perform dependency resolution for `node_id`, keeping `root_node_id` pinned and only using candidates that exist before or at `time`, while also making sure that there exists atleast 1 satisfying Python Version [see Inputs and Outputs above].
+- Perform dependency resolution for `node_id`, keeping `root_node_id` pinned and only using candidates that exist before or at `time`, while also making sure that there exists atleast 1 satisfying Python Version [see Inputs and Outputs above]. 
+- Utilize pip's existing dependency resolution and backtracking logic - try to minimize modifications to it, unless necessary. The goal is to provide our data and use pip's existing resolution+backtracking machinery as much as possible.
 - To filter candidates for a specific dependency `name_id` up till and including `time`, use binary search to find relevant chunk for cutoff (by performing binary search on `ma` from the `*_headers` collection to indentify last chunk index) and then binary search within that `*_chunks` collection records to find last candidate. Candidates are ordered by time in ascending order, so (keeping with pip) you may need to provide candidates in the order of most recent first.
 - Write your code in the `pipstyle` directory. You may copy code from relevant directories (like src/pip/_vendor/resolvelib/ and src/pip/_internal/resolution/resolvelib/) and change/adjust it.
 - Since you will have to modify /re-write the data providers (data structures for retrieving candidates, dependencies, etc) alongside their methods, it would be best to keep the data structures minimal to reduce creation overhead. By minimal, we want the datastructures to be enough for the data we are providing from the db collections (e.g. you wouldnt want to store extra requirements as a field because that would always be empty since we don't store/track that data). Similarly, you can deal in node_ids, name_ids, since that's what you will expect to receive as input.

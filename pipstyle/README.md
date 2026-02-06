@@ -115,7 +115,12 @@ if tree:
 From the repo root (the `pip` directory), run resolution for every node in a subgraph (one root bit):
 
 ```bash
-python -m pipstyle.run --subgraph urllib3_subgraph --root-bit-index 82 --output-dir output [--debug]
+python3 -m pipstyle.run --subgraph urllib3_subgraph --root-bit-index 82 --output-dir output [--debug]
+```
+
+Or for a smaller example:
+```bash
+python3 -m pipstyle.run --subgraph pyxdg_subgraph --root-bit-index 1 --output-dir output
 ```
 
 - **--subgraph**: Subgraph collection name (e.g. `urllib3_subgraph`).
