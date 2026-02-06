@@ -341,7 +341,7 @@ PY_CANDIDATES = [
 }
 ```
 
-**Built from:** `distribution_metadata.requires_dist` parsing. A requires_dist string is parsed, and matched to concrete qualifying versions for the node. For example, (pandas,2.3.3) requires_dist had "python-dateutil>=2.8.2" in its requires_dist; an edge is drawn from src=(pandas,2.3.3) to dst=(python-dateutil,2.8.2) where dst is one qualifying version given the requires_dist string (there can be many, and are resolved into separate edges in the graph).
+**Built from:** `distribution_metadata.requires_dist` parsing. A requires_dist string is parsed, and matched to concrete qualifying versions for the node. For example, (pandas,2.3.3) requires_dist had "python-dateutil>=2.8.2" in its requires_dist; an edge is drawn from src=(pandas,2.3.3) to dst=(python-dateutil,2.8.2) where dst is one qualifying version given the requires_dist string (there can be many, and are resolved into separate edges in the graph). So instead of keeping constraints, we resolve those to concrete edges between nodes.
 **Script:** `build_globalGraph_batched_latest.py`.
 
 **Important note:** you later remap `(name, version)` to your integer `node_id` for downstream work.

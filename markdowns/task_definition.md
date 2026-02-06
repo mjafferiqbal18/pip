@@ -8,6 +8,12 @@
 ### Relevant context about existing pip execution trace:
 - markdowns/pandas_execution_trace.md
 
+### Relevant data structures used in pip's dependency resolution:
+- markdowns/pip_dependency_resolution_data_structures.md
+
+### Relevant script that reads from existing collections:
+- external/phase4_exposure_nodes_1.py (you should only look to this to understand how data is read from the collections and how it is stored in memory (or just streamed in from db in case of chunks))
+
 ### Task Definition:
 - Instead of querying PyPI endpoints for finding the latest version of a root package, finding its constraints, its direct dependencies (packages) and qualifying versions (package,versions) that satisfy constraints(and repeating the same tasks when recursing on the dependencies to resolve them in hopes of finding a satisfying assignment for all packages and a Python version that can support them), we want to use our preprocessed collections in our mongodb (described in detail in `markdowns/db_collections_reference.md`), all of which (apart from *_chunks) can be loaded into memory at the start.
 
@@ -26,8 +32,8 @@
 - `dependency Tree`: Final dependency tree structure if `resolved`==True and args.debug==1, Default= None.
 
 ### Required Workflow:
-- Perform dependency resolution for `node_id`, keeping `root_node_id` pinned and only using candidates that exist before or at `time`, while also making sure that there exists atleast 1 satisfying Python Version
-- 
+- Perform dependency resolution for `node_id`, keeping `root_node_id` pinned and only using candidates that exist before or at `time`, while also making sure that there exists atleast 1 satisfying Python Version [see Inputs and Outputs above].
+
 
 ### Potential Caches to improve performance:
-- All collections that can be loaded into memory (`global_graph_node_ids`,`global_graph_name_ids`,`global_graph_requires_python_with_timestamps`,`global_graph_adj_deps`,`global_graph_adj_headers`) should be loaded into memory at the start. Use a LRU cache for `global_graph_adj_chunks` with a default cap size of 200k keys. Store all chunk data (not time truncated data) in the LRU cache.
+- All collections that can be loaded into memory (`global_graph_node_ids`,`global_graph_name_ids`,`global_graph_requires_python_with_timestamps`,`global_graph_adj_deps`,`global_graph_adj_headers`) should be loaded into memory at the start. Use a LRU cache for `global_graph_adj_chunks` with a default cap size of 200k keys (should be configurable via args). Store all chunk data (not time truncated data) in the LRU cache (when caching it), i.e. not just up to an arbitrary time t.
