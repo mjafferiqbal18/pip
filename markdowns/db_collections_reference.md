@@ -581,5 +581,13 @@ PY_CANDIDATES = [
 - `subgraphs.*` + `global_graph_adj_*` + timestamps/masks
   - → `phase4 exposure CSV outputs`
 
-From these, the following can be read into memory:
-- `global_graph_node_ids`, `global_graph_name_ids`, `global_graph_requires_python_with_timestamps`,`global_graph_adj_deps`, `global_graph_adj_headers`
+### 10) Most relevant collections and their summaries:
+From these, all collections (apart from the global_graph_adj_chunks) can be read into memory as maps in Python
+One can use an LRU cache (e.g. size=200k entries) for `global_graph_adj_chunks` data as well
+
+- `global_graph_node_ids`: maps a node_id to package (name,version)
+- `global_graph_name_ids`: maps a name_id to package name
+- `global_graph_requires_python_with_timestamps`: maps a node_id to first_upload_time and py_mask (allowed Python versions)
+- `global_graph_adj_deps`: maps a node_id to name_ids of dependencies it requires (direct dependencies)
+- `global_graph_adj_headers`: maps a node_id, dependency name_id to chunks(sorted by time), min and max times per chunk
+- `global_graph_adj_chunks`: maps a node_id, dependency name_id, chunk to the set of qualifying versions (node_ids of concrete qualifying versions of direct dependencies)
