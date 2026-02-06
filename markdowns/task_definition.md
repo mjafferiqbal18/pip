@@ -33,7 +33,10 @@
 
 ### Required Workflow:
 - Perform dependency resolution for `node_id`, keeping `root_node_id` pinned and only using candidates that exist before or at `time`, while also making sure that there exists atleast 1 satisfying Python Version [see Inputs and Outputs above].
-
+- To filter candidates for a specific dependency `name_id` up till and including `time`, use binary search to find relevant chunk for cutoff (by performing binary search on `ma` from the `*_headers` collection to indentify last chunk index) and then binary search within that `*_chunks` collection records to find last candidate. Candidates are ordered by time in ascending order, so (keeping with pip) you may need to provide candidates in the order of most recent first.
+- Write your code in the `pipstyle` directory. You may copy code from relevant directories (like src/pip/_vendor/resolvelib/ and src/pip/_internal/resolution/resolvelib/) and change/adjust it.
+- Since you will have to modify /re-write the data providers (data structures for retrieving candidates, dependencies, etc) alongside their methods, it would be best to keep the data structures minimal to reduce creation overhead. By minimal, we want the datastructures to be enough for the data we are providing from the db collections (e.g. you wouldnt want to store extra requirements as a field because that would always be empty since we don't store/track that data). Similarly, you can deal in node_ids, name_ids, since that's what you will expect to receive as input.
+- You will have to modify / rewrite the data handling logic. For example, you can't intersect constraints (since we don't provide them), but instead you can intersect the set available candidates. Similarly, you can intersect py_masks as well (and check if ==0 to see if incompatible).
 
 ### Potential Caches to improve performance:
 - All collections that can be loaded into memory (`global_graph_node_ids`,`global_graph_name_ids`,`global_graph_requires_python_with_timestamps`,`global_graph_adj_deps`,`global_graph_adj_headers`) should be loaded into memory at the start. Use a LRU cache for `global_graph_adj_chunks` with a default cap size of 200k keys (should be configurable via args). Store all chunk data (not time truncated data) in the LRU cache (when caching it), i.e. not just up to an arbitrary time t.
